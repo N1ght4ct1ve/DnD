@@ -1,0 +1,12 @@
+.mp3
+!static/temp/default.png
+.mp4
+.jpg
+uploads/
+music/
+temp/
+.venv/
+.DS_Store/
+.DS_Store
+__pycache__/
+venv/
