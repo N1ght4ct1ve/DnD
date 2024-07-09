@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Canvas</title>
+    <style>
+        canvas {
+            border: 1px solid black;
+        }
+    </style>
+</head>
+<body>
+    <h1>Image Canvas</h1>
+    <form action="/" method="post" enctype="multipart/form-data">
+        <label for="background">Hintergrund hochladen:</label>
+        <input type="file" name="background" accept="image/*">
+        <button type="submit">Upload</button>
+    </form>
+
+    {% if background %}
+        <canvas id="canvas" width="800" height="600"></canvas>
+        <script>
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+
+            // Hintergrundbild laden und zeichnen
+            const background = new Image();
+            background.src = '/static/uploads/{{ background }}';
+            background.onload = () => {
+                ctx.drawImage(background, 0, 0, canvas.width, canvas.height);
+            };
+
+            // Zum Zeichnen
+            let drawing = false;
+            canvas.addEventListener('mousedown', () => drawing = true);
+            canvas.addEventListener('mouseup', () => drawing = false);
+            canvas.addEventListener('mousemove', draw);
+
+            function draw(event) {
+                if (!drawing) return;
+                ctx.lineWidth = 5;
+                ctx.lineCap = 'round';
+                ctx.strokeStyle = 'black';
+
+                ctx.lineTo(event.clientX - canvas.offsetLeft, event.clientY - canvas.offsetTop);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(event.clientX - canvas.offsetLeft, event.clientY - canvas.offsetTop);
+            }
+
+            // Weitere Bilder hochladen und bewegen
+            document.getElementById('uploadImage').addEventListener('change', function(event) {
+                const file = event.target.files[0];
+                const formData = new FormData();
+                formData.append('image', file);
+
+                fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.text())
+                .then(filename => {
+                    const img = new Image();
+                    img.src = '/static/uploads/' + filename;
+                    img.onload = () => {
+                        const x = 100;
+                        const y = 100;
+                        ctx.drawImage(img, x, y, img.width / 2, img.height / 2);
+
+                        // Bild verschieben
+                        img.onmousedown = (e) => {
+                            let offsetX = e.clientX - x;
+                            let offsetY = e.clientY - y;
+                            document.onmousemove = (e) => {
+                                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                                ctx.drawImage(background, 0, 0, canvas.width, canvas.height);
+                                x = e.clientX - offsetX;
+                                y = e.clientY - offsetY;
+                                ctx.drawImage(img, x, y, img.width / 2, img.height / 2);
+                            };
+                            document.onmouseup = () => {
+                                document.onmousemove = null;
+                            };
+                        };
+                    };
+                });
+            });
+        </script>
+
+        <form>
+            <label for="uploadImage">Weitere Bilder hochladen:</label>
+            <input type="file" id="uploadImage" accept="image/*">
+        </form>
+    {% endif %}
+</body>
+</html>

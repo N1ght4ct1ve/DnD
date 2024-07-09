@@ -1,35 +1,30 @@
-# Importiert notwendige Module und Pakete
-import random
-# from threading import Thread, Event
-from flask import Flask, request, render_template, redirect, url_for, jsonify
+from flask import Flask, render_template, request, redirect, url_for
+from flask_uploads import UploadSet, configure_uploads, IMAGES
+from werkzeug.utils import secure_filename
+from werkzeug.datastructures import FileStorage
 
+import os
 
-
-# Initialisiert die Flask-App
 app = Flask(__name__)
 
+# Konfiguration für das Hochladen von Bildern
+photos = UploadSet('photos', IMAGES)
+app.config['UPLOADED_PHOTOS_DEST'] = 'static/uploads'
+configure_uploads(app, photos)
 
-
-""" ---- HTML Funktionen ---- """
-# Definiert die Route für die Startseite
-@app.route('/')
+@app.route('/', methods=['GET', 'POST'])
 def index():
-    return render_template("index.html")
-    # return render_template("index.html", playback_queue=current_queue, files=mp3_files, current_song=current_song)
+    if request.method == 'POST' and 'background' in request.files:
+        filename = photos.save(request.files['background'], name=secure_filename(request.files['background'].filename))
+        return render_template('index.html', background=filename)
+    return render_template('index.html', background=None)
 
+@app.route('/upload', methods=['POST'])
+def upload():
+    if 'image' in request.files:
+        filename = photos.save(request.files['image'], name=secure_filename(request.files['image'].filename))
+        return filename
+    return 'Failed', 400
 
-# Definiert eine benutzerdefinierte Fehlerseite für den HTTP-Statuscode 404
-@app.errorhandler(404)
-def page_not_found(e):
-    return render_template('404.html'), 404
-
-
-# Startet die Flask-App und den Audio-Player-Thread
 if __name__ == '__main__':
-    
-    # Startet die Flask-App
-    app.config.update(
-        TEMPLATES_AUTO_RELOAD = True
-    )
-    app.register_error_handler(404, page_not_found)  # Registriert die benutzerdefinierte Fehlerseite
-    app.run(host='0.0.0.0', port=5000)
+    app.run(debug=True)
