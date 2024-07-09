@@ -4,11 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Image Canvas</title>
-    <style>
-        canvas {
-            border: 1px solid black;
-        }
-    </style>
+    <link rel="stylesheet" href="/static/css/styles.css">
 </head>
 <body>
     <h1>Image Canvas</h1>
@@ -18,80 +14,38 @@
         <button type="submit">Upload</button>
     </form>
 
+    <div id="toolbar">
+        <div id="colors">
+            <button class="color" data-color="black" style="background-color: black;"></button>
+            <button class="color" data-color="red" style="background-color: red;"></button>
+            <button class="color" data-color="green" style="background-color: green;"></button>
+            <button class="color" data-color="blue" style="background-color: blue;"></button>
+            <!-- Weitere Farben hier hinzufügen -->
+        </div>
+        <button id="eraser">Radierer</button>
+    </div>
+
+    <div id="inventory">
+        <input type="file" id="uploadImage" accept="image/*">
+        <div id="uploadedImages"></div>
+    </div>
+
+    <canvas id="canvas" width="800" height="600"></canvas>
+
+    <script src="/static/js/script.js"></script>
+
     {% if background %}
-        <canvas id="canvas" width="800" height="600"></canvas>
-        <script>
+    <script>
+        window.onload = function() {
             const canvas = document.getElementById('canvas');
             const ctx = canvas.getContext('2d');
-
-            // Hintergrundbild laden und zeichnen
             const background = new Image();
             background.src = '/static/uploads/{{ background }}';
             background.onload = () => {
                 ctx.drawImage(background, 0, 0, canvas.width, canvas.height);
             };
-
-            // Zum Zeichnen
-            let drawing = false;
-            canvas.addEventListener('mousedown', () => drawing = true);
-            canvas.addEventListener('mouseup', () => drawing = false);
-            canvas.addEventListener('mousemove', draw);
-
-            function draw(event) {
-                if (!drawing) return;
-                ctx.lineWidth = 5;
-                ctx.lineCap = 'round';
-                ctx.strokeStyle = 'black';
-
-                ctx.lineTo(event.clientX - canvas.offsetLeft, event.clientY - canvas.offsetTop);
-                ctx.stroke();
-                ctx.beginPath();
-                ctx.moveTo(event.clientX - canvas.offsetLeft, event.clientY - canvas.offsetTop);
-            }
-
-            // Weitere Bilder hochladen und bewegen
-            document.getElementById('uploadImage').addEventListener('change', function(event) {
-                const file = event.target.files[0];
-                const formData = new FormData();
-                formData.append('image', file);
-
-                fetch('/upload', {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(response => response.text())
-                .then(filename => {
-                    const img = new Image();
-                    img.src = '/static/uploads/' + filename;
-                    img.onload = () => {
-                        const x = 100;
-                        const y = 100;
-                        ctx.drawImage(img, x, y, img.width / 2, img.height / 2);
-
-                        // Bild verschieben
-                        img.onmousedown = (e) => {
-                            let offsetX = e.clientX - x;
-                            let offsetY = e.clientY - y;
-                            document.onmousemove = (e) => {
-                                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                                ctx.drawImage(background, 0, 0, canvas.width, canvas.height);
-                                x = e.clientX - offsetX;
-                                y = e.clientY - offsetY;
-                                ctx.drawImage(img, x, y, img.width / 2, img.height / 2);
-                            };
-                            document.onmouseup = () => {
-                                document.onmousemove = null;
-                            };
-                        };
-                    };
-                });
-            });
-        </script>
-
-        <form>
-            <label for="uploadImage">Weitere Bilder hochladen:</label>
-            <input type="file" id="uploadImage" accept="image/*">
-        </form>
+        };
+    </script>
     {% endif %}
 </body>
 </html>
